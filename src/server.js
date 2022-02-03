@@ -5,6 +5,7 @@ import dotenv from "dotenv"
 import joi from "joi"
 import dayjs from 'dayjs'
 import bcrypt from "bcrypt"
+import { v4 as uuid } from "uuid"
 
 
 
@@ -31,22 +32,43 @@ mongoClient.connect().then(() => {
     db = mongoClient.db("api-my-wallet")
 });
 
-app.post('/signin', (req, res) => {
-    const user = req.body
-    res.send(200)
+app.post('/signin', async (req, res) => {
+    const { email, password } = req.body
+
+    const user = await db.collection("users").findOne({ email })
+
+    if (user && bcrypt.compareSync(password, user.password)) {
+        const token = uuid();
+
+        await db.collection("sessions").insertOne({
+            userId: user._id,
+            token
+        })
+        res.status(200).send(token)
+
+    } else {
+        res.status(401).send("Usuario não encontrado")
+    }
+
 
 })
 
 app.post('/signup', async (req, res) => {
     const user = req.body
-    const passwordHash = bcrypt.hashSync(user.password, 10)
+    try {
+        const userDuplicated = await db.collection("users").findOne({ email: user.email })
 
+        if (userDuplicated) {
+            res.sendStatus(409)
+        } else {
 
-
-    await db.collection("users").insertOne({ ...user, password: passwordHash })
-
-
-
+            const passwordHash = bcrypt.hashSync(user.password, 10)
+            await db.collection("users").insertOne({ ...user, password: passwordHash })
+        }
+        res.sendStatus(201)
+    } catch (error) {
+        res.sendStatus(500)
+    }
 })
 
 app.get("/users", async (req, res) => {
