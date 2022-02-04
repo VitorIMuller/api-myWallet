@@ -115,7 +115,18 @@ app.post("/cashout", async (req, res) => {
     }
 })
 
-app.get("/transations", async (req, res) => {
-    const transations = await db.collection("transations").find({}).toArray()
-    res.send(transations)
+app.get("/historic", async (req, res) => {
+    const { authorization } = req.headers
+    const token = authorization?.replace('Bearer ', '')
+
+    try {
+        const user = await db.collection("sessions").findOne({ token: token });
+        console.log(user.userId)
+        const userId = user.userId
+        const historic = await db.collection("transations").find({ userId: userId }).toArray();
+
+        res.send(historic)
+    } catch (error) {
+
+    }
 })
