@@ -37,21 +37,31 @@ app.post('/signin', async (req, res) => {
 
     const user = await db.collection("users").findOne({ email })
 
-    if (user && bcrypt.compareSync(password, user.password)) {
-        const token = uuid();
+    try {
+        if (user && bcrypt.compareSync(password, user.password)) {
+            const token = uuid();
 
-        await db.collection("sessions").insertOne({
-            userId: user._id,
-            token
-        })
-        res.status(200).send(token)
+            await db.collection("sessions").insertOne({
+                userId: user._id,
+                token
+            })
 
-    } else {
-        res.status(401).send("Usuario não encontrado")
+            if (user) {
+                delete user.password
+                res.status(200).send({ ...user, token })
+            }
+        } else {
+            res.status(401).send("Usuario não encontrado")
+        }
+    } catch (error) {
+        res.sendStatus(500)
     }
 
 
+
 })
+
+
 
 app.post('/signup', async (req, res) => {
     const user = req.body
@@ -73,7 +83,39 @@ app.post('/signup', async (req, res) => {
 
 app.get("/users", async (req, res) => {
     const users = await db.collection("users").find({}).toArray()
-
     res.send(users)
+})
 
+app.post("/cashin", async (req, res) => {
+    const desc = req.body
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    const type = "deposit";
+
+    try {
+        const user = await db.collection("sessions").findOne({ token: token })
+        const userId = user.userId
+        await db.collection("transations").insertOne({ userId, ...desc, type })
+        res.sendStatus(201)
+    } catch (error) {
+        res.sendStatus(500)
+    }
+})
+app.post("/cashout", async (req, res) => {
+    const desc = req.body
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    const type = "withdraw";
+
+    try {
+        const user = await db.collection("sessions").findOne({ token: token })
+        const userId = user.userId
+        await db.collection("transations").insertOne({ userId, ...desc, type })
+        res.sendStatus(201)
+    } catch (error) {
+        res.sendStatus(500)
+    }
+})
+
+app.get("/transations", async (req, res) => {
+    const transations = await db.collection("transations").find({}).toArray()
+    res.send(transations)
 })
