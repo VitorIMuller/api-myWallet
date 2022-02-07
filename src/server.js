@@ -90,11 +90,12 @@ app.post("/cashin", async (req, res) => {
     const desc = req.body
     const token = req.headers.authorization?.replace('Bearer ', '');
     const type = "deposit";
+    const date = dayjs().format("DD/MM")
 
     try {
         const user = await db.collection("sessions").findOne({ token: token })
         const userId = user.userId
-        await db.collection("transations").insertOne({ userId, ...desc, type })
+        await db.collection("transations").insertOne({ userId, ...desc, type, date })
         res.sendStatus(201)
     } catch (error) {
         res.sendStatus(500)
@@ -104,11 +105,12 @@ app.post("/cashout", async (req, res) => {
     const desc = req.body
     const token = req.headers.authorization?.replace('Bearer ', '');
     const type = "withdraw";
+    const date = dayjs().format("DD/MM")
 
     try {
         const user = await db.collection("sessions").findOne({ token: token })
         const userId = user.userId
-        await db.collection("transations").insertOne({ userId, ...desc, type })
+        await db.collection("transations").insertOne({ userId, ...desc, type, date })
         res.sendStatus(201)
     } catch (error) {
         res.sendStatus(500)
