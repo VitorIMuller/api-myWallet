@@ -123,7 +123,6 @@ app.get("/historic", async (req, res) => {
 
     try {
         const user = await db.collection("sessions").findOne({ token: token });
-        console.log(user.userId)
         const userId = user.userId
         const historic = await db.collection("transations").find({ userId: userId }).toArray();
 
