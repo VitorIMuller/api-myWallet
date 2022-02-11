@@ -23,7 +23,7 @@ const userSignUpModel = joi.object({
 
 let db;
 
-app.listen(5000, () => {
+app.listen(process.env.PORT, () => {
     console.log("Servidor rodando na porta 5000")
 });
 
